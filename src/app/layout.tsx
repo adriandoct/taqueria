@@ -17,13 +17,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Taquería El Rincón Auténtico | Tacos Mexicanos',
+  title: 'Taquería Jefe de Jefes | Alambres y Tacos en Oaxaca',
   description:
-    'Los mejores tacos de la ciudad. Pide desde nuestro menú digital o con tu voz. Pastor, Birria, Suadero, Carnitas y más.',
-  keywords: ['tacos', 'taquería', 'comida mexicana', 'tacos al pastor', 'birria'],
+    'El mejor menú de alambres, tacos al pastor, tasajo, sincronizadas y quesadillas. Servicio a domicilio de 7am a 12 de la noche. Llama al 951 147 60 75.',
+  keywords: ['alambres', 'tacos', 'jefe de jefes', 'taquería oaxaca', 'tasajo', 'sincronizada', 'pastor'],
   openGraph: {
-    title: 'Taquería El Rincón Auténtico',
-    description: 'Los mejores tacos de la ciudad. Pide en línea.',
+    title: 'Taquería Jefe de Jefes',
+    description: 'Alambres y tacos a domicilio. Pide en línea o por voz.',
     type: 'website',
   },
 };

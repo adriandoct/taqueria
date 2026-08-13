@@ -72,7 +72,7 @@ export default async function Home() {
             className="text-6xl md:text-8xl font-black mb-6 leading-none tracking-tight"
             style={{ fontFamily: 'var(--font-outfit)' }}
           >
-            <span className="text-white">Tacos que</span>
+            <span className="text-white">Jefe de</span>
             <br />
             <span
               className="inline-block"
@@ -83,13 +83,16 @@ export default async function Home() {
                 backgroundClip: 'text',
               }}
             >
-              enamoran
+              Jefes 🔥
             </span>
           </h1>
 
           <p className="text-white/50 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-            Recetas tradicionales, ingredientes frescos del mercado y el sazón que se hereda.
-            Pide en línea, por voz o registra las ventas de tu turno al instante.
+            Alambres, tacos, sincronizadas y quesadillas. Servicio a domicilio
+            de lunes a domingo de 7am a 12 de la noche.
+            <a href="tel:+529511476075" className="ml-2 text-orange-400 font-semibold hover:text-orange-300 transition-colors">
+              ☎️ 951 147 60 75
+            </a>
           </p>
 
           {/* CTAs */}
@@ -125,9 +128,9 @@ export default async function Home() {
           {/* Stats */}
           <div className="flex flex-wrap justify-center gap-8 mt-14">
             {[
-              { number: '8+', label: 'Tipos de taco' },
-              { number: '100%', label: 'Ingredientes frescos' },
-              { number: '15min', label: 'Tiempo promedio' },
+              { number: '9', label: 'Alambres especiales' },
+              { number: '3', label: 'Tipos de taco' },
+              { number: '7–12', label: 'Horario nocturno' },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <p
@@ -166,10 +169,13 @@ export default async function Home() {
       >
         <div className="flex items-center justify-center gap-2 mb-3">
           <Flame className="w-4 h-4 text-orange-500" />
-          <span className="text-white font-bold text-sm">Taquería El Rincón Auténtico</span>
+          <span className="text-white font-bold text-sm">Taquería Jefe de Jefes</span>
         </div>
         <p className="text-white/25 text-xs mb-3">
-          Hecho con 🌮 y mucho sazón · Control de pedidos y corte de caja en tiempo real
+          Hecho con 🌮 y mucho sazón · Servicio a domicilio ·{' '}
+          <a href="tel:+529511476075" className="hover:text-orange-400 transition-colors">
+            951 147 60 75
+          </a>
         </p>
       </footer>
 

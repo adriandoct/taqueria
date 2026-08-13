@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { Plus, Star } from 'lucide-react';
+import { Plus, Star, Flame, Coffee } from 'lucide-react';
 import { Taco } from '@/lib/types';
 import { useCart } from '@/hooks/useCart';
 import { useState } from 'react';
@@ -13,17 +13,34 @@ interface TacoCardProps {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  res: '#EF4444',
-  cerdo: '#F97316',
-  mixto: '#8B5CF6',
-  vegetariano: '#22C55E',
+  alambre: '#F97316',
+  taco: '#EF4444',
+  suizo: '#8B5CF6',
+  sincronizada: '#F59E0B',
+  quesadilla: '#22C55E',
+  bebida: '#0EA5E9',
+  especial: '#EC4899',
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  res: '🐄 Res',
-  cerdo: '🐷 Cerdo',
-  mixto: '✨ Mixto',
-  vegetariano: '🌱 Vegetal',
+  alambre: '🔥 Alambre',
+  taco: '🌮 Taco',
+  suizo: '🧀 Suizo',
+  sincronizada: '🫓 Sincronizada',
+  quesadilla: '🫔 Quesadilla',
+  bebida: '🥤 Bebida',
+  especial: '⭐ Especial',
+};
+
+// Image fallbacks per category
+const CATEGORY_EMOJI: Record<string, string> = {
+  alambre: '🔥',
+  taco: '🌮',
+  suizo: '🧀',
+  sincronizada: '🫓',
+  quesadilla: '🫔',
+  bebida: '🥤',
+  especial: '⭐',
 };
 
 export function TacoCard({ taco, index }: TacoCardProps) {
@@ -43,39 +60,37 @@ export function TacoCard({ taco, index }: TacoCardProps) {
 
   const categoryColor = CATEGORY_COLORS[taco.categoria] || '#F97316';
   const categoryLabel = CATEGORY_LABELS[taco.categoria] || taco.categoria;
+  const emoji = CATEGORY_EMOJI[taco.categoria] || '🍽️';
+  const isBebida = taco.categoria === 'bebida';
 
   return (
     <motion.div
-      className="group relative rounded-2xl overflow-hidden cursor-default"
+      className="group relative rounded-2xl overflow-hidden cursor-default flex flex-col"
       style={{
         background: 'linear-gradient(145deg, #1A1410, #120E0A)',
         border: '1px solid rgba(255,255,255,0.06)',
       }}
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.08, duration: 0.5 }}
+      transition={{ delay: index * 0.06, duration: 0.5 }}
       whileHover={{
         y: -4,
         boxShadow: `0 20px 60px ${categoryColor}25`,
         borderColor: `${categoryColor}30`,
       }}
     >
-      {/* Image */}
-      <div className="relative h-48 overflow-hidden">
-        <Image
-          src={taco.imagen_url}
-          alt={taco.nombre}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-110"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-        />
-        {/* Image overlay gradient */}
+      {/* Visual Area */}
+      <div
+        className="relative h-40 overflow-hidden flex items-center justify-center"
+        style={{ background: `radial-gradient(ellipse at 50% 50%, ${categoryColor}18, transparent 70%)` }}
+      >
+        {/* Emoji visual (decorative) */}
         <div
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(to bottom, transparent 40%, rgba(13,10,7,0.95) 100%)',
-          }}
-        />
+          className="text-6xl select-none opacity-60 transition-transform duration-500 group-hover:scale-110 group-hover:opacity-80"
+          aria-hidden="true"
+        >
+          {emoji}
+        </div>
 
         {/* Category Badge */}
         <div
@@ -91,40 +106,57 @@ export function TacoCard({ taco, index }: TacoCardProps) {
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
         >
           $<span style={{ color: '#F59E0B' }}>{taco.precio.toFixed(0)}</span>
+          {taco.unidad && (
+            <span className="text-white/50 text-xs font-normal ml-1">/{taco.unidad}</span>
+          )}
         </div>
 
-        {/* Star */}
-        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-        </div>
+        {/* Hot indicator for alambres */}
+        {taco.categoria === 'alambre' && (
+          <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Flame className="w-4 h-4 text-orange-400 fill-orange-400" />
+          </div>
+        )}
+        {isBebida && (
+          <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Coffee className="w-4 h-4 text-sky-400" />
+          </div>
+        )}
+        {!isBebida && taco.categoria !== 'alambre' && (
+          <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+          </div>
+        )}
       </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="p-4 flex flex-col flex-1">
         <h3 className="text-white font-bold text-lg mb-1 leading-tight">{taco.nombre}</h3>
-        <p className="text-white/50 text-sm leading-relaxed line-clamp-2 mb-4">
+        <p className="text-white/50 text-sm leading-relaxed mb-4 flex-1">
           {taco.descripcion}
         </p>
 
-        {/* Specs Input */}
-        <input
-          type="text"
-          value={specs}
-          onChange={(e) => setSpecs(e.target.value)}
-          placeholder="Personaliza (ej: sin cebolla, salsa verde aparte)"
-          className="w-full text-xs px-3 py-2 rounded-lg mb-3 outline-none transition-all"
-          style={{
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            color: 'rgba(255,255,255,0.7)',
-          }}
-          onFocus={(e) => {
-            e.target.style.borderColor = `${categoryColor}60`;
-          }}
-          onBlur={(e) => {
-            e.target.style.borderColor = 'rgba(255,255,255,0.08)';
-          }}
-        />
+        {/* Specs Input — not shown for bebidas */}
+        {!isBebida && (
+          <input
+            type="text"
+            value={specs}
+            onChange={(e) => setSpecs(e.target.value)}
+            placeholder="Personaliza (ej: sin cebolla, extra queso)"
+            className="w-full text-xs px-3 py-2 rounded-lg mb-3 outline-none transition-all"
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              color: 'rgba(255,255,255,0.7)',
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = `${categoryColor}60`;
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = 'rgba(255,255,255,0.08)';
+            }}
+          />
+        )}
 
         {/* Add Button */}
         <motion.button
@@ -146,7 +178,7 @@ export function TacoCard({ taco, index }: TacoCardProps) {
           ) : (
             <>
               <Plus className="w-4 h-4" />
-              Agregar al Carrito
+              {isBebida ? 'Agregar Bebida' : 'Agregar al Carrito'}
             </>
           )}
         </motion.button>

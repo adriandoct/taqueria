@@ -2,7 +2,8 @@ import { Taco, ParsedOrderItem } from './types';
 
 // ============================================================
 // Voice Order Parser — Spanish (es-MX)
-// Converts natural speech into structured cart items
+// Taquería Jefe de Jefes — menú completo
+// Convierte lenguaje natural en ítems del carrito
 // ============================================================
 
 // Number words in Spanish
@@ -21,6 +22,58 @@ const NUMBER_WORDS: Record<string, number> = {
   '6': 6, '7': 7, '8': 8, '9': 9, '10': 10,
 };
 
+// Aliases to help voice matching for the Jefe de Jefes menu
+// Maps spoken variations → canonical menu item name
+const VOICE_ALIASES: Record<string, string> = {
+  // Alambres
+  'pastor': 'Alambre al Pastor',
+  'alambre pastor': 'Alambre al Pastor',
+  'alambre al pastor': 'Alambre al Pastor',
+  'bisteck': 'Alambre de Bisteck',
+  'bistec': 'Alambre de Bisteck',
+  'bistek': 'Alambre de Bisteck',
+  'alambre bisteck': 'Alambre de Bisteck',
+  'alambre bistec': 'Alambre de Bisteck',
+  'alambre de bisteck': 'Alambre de Bisteck',
+  'hawaiano': 'Alambre Hawaiano',
+  'alambre hawaiano': 'Alambre Hawaiano',
+  'hawaii': 'Alambre Hawaiano',
+  'burra': 'Burra',
+  'alambre burra': 'Burra',
+  'especial': 'Alambre Especial',
+  'alambre especial': 'Alambre Especial',
+  'tlaconete': 'Tlaconete',
+  'charro': 'Charro',
+  'alambre charro': 'Charro',
+  'sencillo': 'Alambre Sencillo',
+  'alambre sencillo': 'Alambre Sencillo',
+  'fortachon': 'Fortachón',
+  'fortachón': 'Fortachón',
+  // Tacos
+  'tasajo': 'Tacos de Tasajo',
+  'tacos tasajo': 'Tacos de Tasajo',
+  'tacos de tasajo': 'Tacos de Tasajo',
+  'chuleta': 'Tacos de Chuleta',
+  'tacos chuleta': 'Tacos de Chuleta',
+  'tacos de chuleta': 'Tacos de Chuleta',
+  'tacos pastor': 'Tacos al Pastor',
+  'tacos al pastor': 'Tacos al Pastor',
+  // Suizo & Sincronizada
+  'suizo': 'Suizo',
+  'sincronizada': 'Sincronizada',
+  // Quesadilla
+  'quesadilla': 'Quesadilla',
+  'quesadillas': 'Quesadilla',
+  // Bebidas
+  'refresco': 'Refresco Desechable',
+  'refresco desechable': 'Refresco Desechable',
+  'refresco de vidrio': 'Refresco en Vidrio',
+  'refresco vidrio': 'Refresco en Vidrio',
+  'boing': 'Boing',
+  'jugo': 'Boing',
+  'agua': 'Boing',
+};
+
 // Customization keywords
 const CUSTOMIZATION_PATTERNS = [
   /sin\s+cebolla/gi,
@@ -32,6 +85,7 @@ const CUSTOMIZATION_PATTERNS = [
   /salsa\s+roja\s+aparte/gi,
   /bien\s+dorad[oa]/gi,
   /extra\s+salsa/gi,
+  /extra\s+queso/gi,
   /picante/gi,
   /muy\s+picante/gi,
   /sin\s+picante/gi,
@@ -39,6 +93,8 @@ const CUSTOMIZATION_PATTERNS = [
   /limón\s+aparte/gi,
   /guacamole/gi,
   /aguacate/gi,
+  /sin\s+tocino/gi,
+  /sin\s+jamón/gi,
 ];
 
 // Normalize text: lowercase, remove accents, trim
@@ -66,19 +122,35 @@ function levenshtein(a: string, b: string): number {
   return dp[m][n];
 }
 
-// Find best matching taco from menu
-function findBestTacoMatch(word: string, tacos: Taco[]): { taco: Taco; score: number } | null {
-  const normWord = normalize(word);
+// Find best matching taco from menu — first checks aliases, then fuzzy
+function findBestTacoMatch(phrase: string, tacos: Taco[]): { taco: Taco; score: number } | null {
+  const normPhrase = normalize(phrase);
+
+  // 1. Check aliases first (exact)
+  for (const [alias, canonicalName] of Object.entries(VOICE_ALIASES)) {
+    if (normalize(alias) === normPhrase) {
+      const taco = tacos.find((t) => normalize(t.nombre) === normalize(canonicalName));
+      if (taco) return { taco, score: 0 };
+    }
+  }
+
+  // 2. Check if phrase is substring of any alias or canonical name
+  for (const [alias, canonicalName] of Object.entries(VOICE_ALIASES)) {
+    if (normalize(alias).includes(normPhrase) || normPhrase.includes(normalize(alias))) {
+      const taco = tacos.find((t) => normalize(t.nombre) === normalize(canonicalName));
+      if (taco) return { taco, score: 0 };
+    }
+  }
+
+  // 3. Direct taco name match
   let bestScore = Infinity;
   let bestTaco: Taco | null = null;
-
   for (const taco of tacos) {
     const normNombre = normalize(taco.nombre);
-    // Check if the word is contained in taco name or vice versa
-    if (normNombre.includes(normWord) || normWord.includes(normNombre)) {
+    if (normNombre.includes(normPhrase) || normPhrase.includes(normNombre)) {
       return { taco, score: 0 };
     }
-    const dist = levenshtein(normWord, normNombre);
+    const dist = levenshtein(normPhrase, normNombre);
     if (dist < bestScore) {
       bestScore = dist;
       bestTaco = taco;
@@ -106,13 +178,16 @@ function extractCustomizations(text: string): string {
   if (/salsa\s+roja\s+aparte/.test(lowerText)) found.push('salsa roja aparte');
   if (/bien\s+dorad/.test(lowerText)) found.push('bien dorado');
   if (/extra\s+salsa/.test(lowerText)) found.push('extra salsa');
+  if (/extra\s+queso/.test(lowerText)) found.push('extra queso');
   if (/muy\s+picante/.test(lowerText)) found.push('muy picante');
-  if (/sin\s+picante/.test(lowerText)) found.push('sin picante');
+  else if (/sin\s+picante/.test(lowerText)) found.push('sin picante');
   else if (/picante/.test(lowerText)) found.push('picante');
   if (/doble\s+tortilla/.test(lowerText)) found.push('doble tortilla');
   if (/lim[oó]n\s+aparte/.test(lowerText)) found.push('limón aparte');
   if (/guacamole/.test(lowerText)) found.push('guacamole');
   if (/aguacate/.test(lowerText)) found.push('aguacate');
+  if (/sin\s+tocino/.test(lowerText)) found.push('sin tocino');
+  if (/sin\s+jam[oó]n/.test(lowerText)) found.push('sin jamón');
 
   return found.join(', ');
 }
@@ -143,8 +218,8 @@ export function parseVoiceOrder(transcript: string, tacos: Taco[]): ParsedOrderI
       }
     }
 
-    // Try to match taco names from 1 to 3 word windows
-    for (let windowSize = 3; windowSize >= 1; windowSize--) {
+    // Try to match taco names from 1 to 4 word windows
+    for (let windowSize = 4; windowSize >= 1; windowSize--) {
       for (let i = 0; i <= words.length - windowSize; i++) {
         const phrase = words.slice(i, i + windowSize).join(' ');
         // Skip pure number words

@@ -228,7 +228,7 @@ export function VoiceAssistant({ tacos }: VoiceAssistantProps) {
                 {!displayText && !error ? (
                   <p className="text-white/25 text-sm italic text-center mt-3">
                     {isListening
-                      ? 'Di tu pedido, por ejemplo: "3 tacos al pastor con todo y 2 de birria"'
+                      ? 'Di tu pedido, por ejemplo: "un alambre al pastor y dos refrescos"'
                       : 'Presiona el micrófono para comenzar'}
                   </p>
                 ) : error ? (

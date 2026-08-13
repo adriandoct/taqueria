@@ -9,7 +9,9 @@ export interface Taco {
   precio: number;
   imagen_url: string;
   disponible: boolean;
-  categoria: 'res' | 'cerdo' | 'mixto' | 'vegetariano';
+  categoria: 'alambre' | 'taco' | 'torta' | 'quesadilla' | 'suizo' | 'sincronizada' | 'bebida' | 'especial';
+  // precio base (tacos se venden por orden)
+  unidad?: string; // ej: 'pieza', 'orden de 5', '600ml'
 }
 
 export interface CartItem {
