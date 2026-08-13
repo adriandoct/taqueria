@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 import { TacoCard } from './TacoCard';
 import { Taco } from '@/lib/types';
 
@@ -79,14 +79,13 @@ const MOCK_TACOS: Taco[] = [
 ];
 
 async function getTacos(): Promise<Taco[]> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  
   // Return mock data if Supabase not configured
-  if (!supabaseUrl || supabaseUrl.includes('your-project-id')) {
+  if (!isSupabaseConfigured()) {
     return MOCK_TACOS;
   }
 
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('menu_tacos')
       .select('*')

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 import { CartItem } from '@/lib/types';
 
 interface PedidoBody {
@@ -21,16 +21,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'El carrito está vacío' }, { status: 400 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-
     // If Supabase is not configured, return a mock success
-    if (!supabaseUrl || supabaseUrl.includes('your-project-id')) {
+    if (!isSupabaseConfigured()) {
       const mockId = crypto.randomUUID();
       return NextResponse.json(
         { id: mockId, estado: 'pendiente', message: 'Pedido simulado (Supabase no configurado)' },
         { status: 201 }
       );
     }
+
+    const supabase = getSupabaseClient();
 
     const { data, error } = await supabase
       .from('pedidos')
