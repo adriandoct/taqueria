@@ -1,6 +1,8 @@
 import { Suspense } from 'react';
 import { MenuGrid, getTacosForClient } from '@/components/MenuGrid';
 import { VoiceAssistant } from '@/components/VoiceAssistant';
+import { CorteTurnoModal } from '@/components/CorteTurnoModal';
+import { ShiftBanner } from '@/components/ShiftBanner';
 import { Flame, Mic, Star } from 'lucide-react';
 
 function MenuSkeleton() {
@@ -17,10 +19,15 @@ function MenuSkeleton() {
   );
 }
 
-// Client component wrapper for VoiceAssistant with server-fetched tacos
-async function VoiceAssistantWrapper() {
+// Client component wrapper for VoiceAssistant and CorteTurnoModal with server-fetched tacos
+async function ClientHelpersWrapper() {
   const tacos = await getTacosForClient();
-  return <VoiceAssistant tacos={tacos} />;
+  return (
+    <>
+      <VoiceAssistant tacos={tacos} />
+      <CorteTurnoModal tacos={tacos} />
+    </>
+  );
 }
 
 export default async function Home() {
@@ -80,9 +87,9 @@ export default async function Home() {
             </span>
           </h1>
 
-          <p className="text-white/50 text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed">
+          <p className="text-white/50 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
             Recetas tradicionales, ingredientes frescos del mercado y el sazón que se hereda.
-            Pide en línea o con tu voz en español.
+            Pide en línea, por voz o registra las ventas de tu turno al instante.
           </p>
 
           {/* CTAs */}
@@ -110,8 +117,13 @@ export default async function Home() {
             </div>
           </div>
 
+          {/* Shift Live Banner */}
+          <div className="mt-12 max-w-lg mx-auto">
+            <ShiftBanner />
+          </div>
+
           {/* Stats */}
-          <div className="flex flex-wrap justify-center gap-8 mt-20">
+          <div className="flex flex-wrap justify-center gap-8 mt-14">
             {[
               { number: '8+', label: 'Tipos de taco' },
               { number: '100%', label: 'Ingredientes frescos' },
@@ -156,14 +168,14 @@ export default async function Home() {
           <Flame className="w-4 h-4 text-orange-500" />
           <span className="text-white font-bold text-sm">Taquería El Rincón Auténtico</span>
         </div>
-        <p className="text-white/25 text-xs">
-          Hecho con 🌮 y mucho sazón · Todos los derechos reservados
+        <p className="text-white/25 text-xs mb-3">
+          Hecho con 🌮 y mucho sazón · Control de pedidos y corte de caja en tiempo real
         </p>
       </footer>
 
-      {/* ---- VOICE ASSISTANT (floating) ---- */}
+      {/* ---- CLIENT HELPERS (Voice Assistant + Corte de Turno Modal) ---- */}
       <Suspense fallback={null}>
-        <VoiceAssistantWrapper />
+        <ClientHelpersWrapper />
       </Suspense>
     </main>
   );

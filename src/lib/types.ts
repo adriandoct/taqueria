@@ -19,13 +19,13 @@ export interface CartItem {
 }
 
 export interface Pedido {
-  id?: string;
+  id: string;
   cliente_nombre: string;
   detalles_orden: CartItem[];
   total: number;
-  estado?: string;
-  transcripcion_voz?: string;
-  created_at?: string;
+  estado: 'pendiente' | 'en preparación' | 'listo' | 'entregado' | 'cancelado';
+  transcripcion_voz?: string | null;
+  created_at: string;
 }
 
 export interface ParsedOrderItem {
@@ -36,3 +36,21 @@ export interface ParsedOrderItem {
 }
 
 export type VoiceState = 'idle' | 'listening' | 'processing' | 'error';
+
+export interface TacoSalesBreakdown {
+  nombre: string;
+  cantidad: number;
+  total: number;
+  categoria: string;
+}
+
+export interface CorteTurnoSummary {
+  totalVentas: number;
+  totalPedidos: number;
+  totalTacos: number;
+  ticketPromedio: number;
+  pedidosPorVoz: number;
+  desgloseTacos: TacoSalesBreakdown[];
+  fechaInicioTurno: string;
+  fechaCorte: string;
+}

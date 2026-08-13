@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2, Loader2, User, Receipt } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
+import { useShift } from '@/hooks/useShift';
+import { Pedido } from '@/lib/types';
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -13,6 +15,7 @@ interface OrderModalProps {
 
 export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
   const { items, total } = useCart();
+  const { registerOrderLocally } = useShift();
   const [clientName, setClientName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -42,7 +45,19 @@ export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al procesar tu pedido');
 
-      setOrderId(data.id);
+      const createdOrder: Pedido = {
+        id: data.id || crypto.randomUUID(),
+        cliente_nombre: clientName.trim(),
+        detalles_orden: items,
+        total: cartTotal,
+        estado: 'pendiente',
+        created_at: data.created_at || new Date().toISOString(),
+      };
+
+      // Register immediately in shift store for live sales sum!
+      registerOrderLocally(createdOrder);
+
+      setOrderId(createdOrder.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
@@ -130,13 +145,18 @@ export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
                     <CheckCircle2 className="w-20 h-20 text-green-400" />
                   </motion.div>
                   <h3 className="text-white text-2xl font-bold mb-2">¡Gracias, {clientName}!</h3>
-                  <p className="text-white/50 text-sm mb-4">Tu pedido está en camino</p>
+                  <p className="text-white/50 text-sm mb-4">Tu pedido fue registrado exitosamente en el sistema</p>
 
                   <div
                     className="rounded-2xl p-4 mb-6 text-left"
                     style={{ background: 'rgba(255,255,255,0.04)' }}
                   >
-                    <p className="text-white/40 text-xs mb-1">Número de pedido</p>
+                    <div className="flex justify-between items-center mb-1">
+                      <p className="text-white/40 text-xs">Número de pedido</p>
+                      <span className="text-[10px] text-green-400 font-semibold px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20">
+                        ✓ Sumado al turno
+                      </span>
+                    </div>
                     <p className="text-orange-400 font-mono font-bold text-sm">
                       #{orderId.slice(0, 8).toUpperCase()}
                     </p>
@@ -149,7 +169,7 @@ export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
 
                   <button
                     onClick={handleClose}
-                    className="w-full py-3 rounded-xl font-bold text-white"
+                    className="w-full py-3 rounded-xl font-bold text-white transition-all hover:opacity-90"
                     style={{ background: 'linear-gradient(135deg, #F97316, #EF4444)' }}
                   >
                     Volver al Menú
