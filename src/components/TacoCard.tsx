@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Plus, Star, Flame, Coffee } from 'lucide-react';
 import { Taco } from '@/lib/types';
 import { useCart } from '@/hooks/useCart';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 interface TacoCardProps {
   taco: Taco;
@@ -32,21 +32,26 @@ const CATEGORY_LABELS: Record<string, string> = {
   especial: '⭐ Especial',
 };
 
-
-
 export function TacoCard({ taco, index }: TacoCardProps) {
   const { addItem, openCart } = useCart();
   const [specs, setSpecs] = useState('');
   const [added, setAdded] = useState(false);
+  const isAddingRef = useRef(false);
 
   const handleAdd = () => {
-    addItem(taco, 1, specs);
+    // Prevent double-tap on mobile touch screens
+    if (isAddingRef.current || added) return;
+    isAddingRef.current = true;
+
+    addItem(taco, 1, specs.trim());
     setAdded(true);
     setSpecs('');
+
     setTimeout(() => {
       setAdded(false);
+      isAddingRef.current = false;
       openCart();
-    }, 600);
+    }, 500);
   };
 
   const categoryColor = CATEGORY_COLORS[taco.categoria] || '#F97316';
@@ -78,7 +83,6 @@ export function TacoCard({ taco, index }: TacoCardProps) {
           className="object-cover transition-transform duration-500 group-hover:scale-110"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           onError={(e) => {
-            // Fallback to emoji overlay if image fails
             (e.target as HTMLImageElement).style.display = 'none';
           }}
         />
@@ -157,7 +161,8 @@ export function TacoCard({ taco, index }: TacoCardProps) {
         {/* Add Button */}
         <motion.button
           onClick={handleAdd}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm text-white transition-all"
+          disabled={added}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm text-white transition-all disabled:opacity-90 cursor-pointer"
           style={{
             background: added
               ? 'linear-gradient(135deg, #16A34A, #15803D)'
@@ -166,8 +171,8 @@ export function TacoCard({ taco, index }: TacoCardProps) {
               ? '0 4px 20px rgba(22,163,74,0.4)'
               : `0 4px 20px ${categoryColor}30`,
           }}
-          whileTap={{ scale: 0.95 }}
-          animate={added ? { scale: [1, 1.05, 1] } : {}}
+          whileTap={!added ? { scale: 0.95 } : {}}
+          animate={added ? { scale: [1, 1.03, 1] } : {}}
         >
           {added ? (
             <>✓ ¡Agregado!</>

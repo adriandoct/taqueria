@@ -7,7 +7,7 @@ interface CartStore {
   items: CartItem[];
   isOpen: boolean;
   addItem: (taco: Taco, cantidad?: number, especificaciones?: string) => void;
-  removeItem: (tacoId: string) => void;
+  removeItem: (tacoId: string, especificaciones?: string) => void;
   updateQuantity: (tacoId: string, especificaciones: string, delta: number) => void;
   updateSpecs: (tacoId: string, oldSpecs: string, newSpecs: string) => void;
   clearCart: () => void;
@@ -23,47 +23,63 @@ export const useCart = create<CartStore>((set, get) => ({
   isOpen: false,
 
   addItem: (taco, cantidad = 1, especificaciones = '') => {
+    const cleanSpecs = (especificaciones || '').trim();
+    const qty = Math.max(1, Math.floor(cantidad));
+
     set((state) => {
-      const existing = state.items.find(
-        (i) => i.taco.id === taco.id && i.especificaciones === especificaciones
+      const existingIndex = state.items.findIndex(
+        (i) => i.taco.id === taco.id && (i.especificaciones || '').trim() === cleanSpecs
       );
-      if (existing) {
-        return {
-          items: state.items.map((i) =>
-            i.taco.id === taco.id && i.especificaciones === especificaciones
-              ? { ...i, cantidad: i.cantidad + cantidad }
-              : i
-          ),
+
+      if (existingIndex > -1) {
+        const newItems = [...state.items];
+        newItems[existingIndex] = {
+          ...newItems[existingIndex],
+          cantidad: newItems[existingIndex].cantidad + qty,
         };
+        return { items: newItems };
       }
-      return { items: [...state.items, { taco, cantidad, especificaciones }] };
+
+      return {
+        items: [...state.items, { taco, cantidad: qty, especificaciones: cleanSpecs }],
+      };
     });
   },
 
-  removeItem: (tacoId) => {
+  removeItem: (tacoId, especificaciones) => {
     set((state) => ({
-      items: state.items.filter((i) => i.taco.id !== tacoId),
+      items: state.items.filter((i) => {
+        if (especificaciones !== undefined) {
+          return !(i.taco.id === tacoId && (i.especificaciones || '').trim() === especificaciones.trim());
+        }
+        return i.taco.id !== tacoId;
+      }),
     }));
   },
 
   updateQuantity: (tacoId, especificaciones, delta) => {
+    const cleanSpecs = (especificaciones || '').trim();
     set((state) => {
-      const updated = state.items.map((i) => {
-        if (i.taco.id === tacoId && i.especificaciones === especificaciones) {
-          const newQty = i.cantidad + delta;
-          return newQty > 0 ? { ...i, cantidad: newQty } : null;
-        }
-        return i;
-      }).filter(Boolean) as CartItem[];
+      const updated = state.items
+        .map((i) => {
+          if (i.taco.id === tacoId && (i.especificaciones || '').trim() === cleanSpecs) {
+            const newQty = i.cantidad + delta;
+            return newQty > 0 ? { ...i, cantidad: newQty } : null;
+          }
+          return i;
+        })
+        .filter(Boolean) as CartItem[];
       return { items: updated };
     });
   },
 
   updateSpecs: (tacoId, oldSpecs, newSpecs) => {
+    const cleanOld = (oldSpecs || '').trim();
+    const cleanNew = (newSpecs || '').trim();
     set((state) => ({
       items: state.items.map((i) =>
-        i.taco.id === tacoId && i.especificaciones === oldSpecs
-          ? { ...i, especificaciones: newSpecs }
+        i.taco.id === tacoId && (i.especificaciones || '').trim() === cleanOld
+          ? { ...i, especificaciones: cleanNew }
           : i
       ),
     }));

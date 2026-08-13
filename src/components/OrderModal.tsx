@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2, Loader2, User, Receipt } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
@@ -14,31 +14,46 @@ interface OrderModalProps {
 }
 
 export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
-  const { items, total } = useCart();
+  const { items, total, clearCart } = useCart();
   const { registerOrderLocally } = useShift();
   const [clientName, setClientName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const isSubmittingRef = useRef(false);
 
   const cartTotal = total();
 
   const handleSubmit = async () => {
-    if (!clientName.trim()) {
+    if (isLoading || isSubmittingRef.current || orderId) return;
+
+    const trimmedName = clientName.trim();
+    if (!trimmedName) {
       setError('Por favor ingresa tu nombre para continuar');
       return;
     }
+
+    if (items.length === 0) {
+      setError('Tu carrito está vacío');
+      return;
+    }
+
+    isSubmittingRef.current = true;
     setError(null);
     setIsLoading(true);
 
     try {
+      // Snapshot items before clearing
+      const orderItemsSnapshot = [...items];
+      const orderTotalSnapshot = cartTotal;
+
       const res = await fetch('/api/pedidos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cliente_nombre: clientName.trim(),
-          detalles_orden: items,
-          total: cartTotal,
+          cliente_nombre: trimmedName,
+          detalles_orden: orderItemsSnapshot,
+          total: orderTotalSnapshot,
         }),
       });
 
@@ -47,21 +62,25 @@ export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
 
       const createdOrder: Pedido = {
         id: data.id || crypto.randomUUID(),
-        cliente_nombre: clientName.trim(),
-        detalles_orden: items,
-        total: cartTotal,
+        cliente_nombre: trimmedName,
+        detalles_orden: orderItemsSnapshot,
+        total: orderTotalSnapshot,
         estado: 'pendiente',
         created_at: data.created_at || new Date().toISOString(),
       };
 
-      // Register immediately in shift store for live sales sum!
+      // Register immediately in shift store for live sales sum
       registerOrderLocally(createdOrder);
+
+      // Clear cart immediately so it cannot be submitted twice
+      clearCart();
 
       setOrderId(createdOrder.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setIsLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -74,6 +93,7 @@ export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
     setClientName('');
     setOrderId(null);
     setError(null);
+    isSubmittingRef.current = false;
   };
 
   return (
@@ -169,7 +189,7 @@ export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
 
                   <button
                     onClick={handleClose}
-                    className="w-full py-3 rounded-xl font-bold text-white transition-all hover:opacity-90"
+                    className="w-full py-3 rounded-xl font-bold text-white transition-all hover:opacity-90 cursor-pointer"
                     style={{ background: 'linear-gradient(135deg, #F97316, #EF4444)' }}
                   >
                     Volver al Menú
@@ -222,11 +242,17 @@ export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
                     </p>
                     <input
                       type="text"
+                      disabled={isLoading}
                       value={clientName}
                       onChange={(e) => { setClientName(e.target.value); setError(null); }}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSubmit();
+                        }
+                      }}
                       placeholder="Ej: Juan, María, El Profe..."
-                      className="w-full px-4 py-3 rounded-xl outline-none text-white text-sm transition-all"
+                      className="w-full px-4 py-3 rounded-xl outline-none text-white text-sm transition-all disabled:opacity-60"
                       style={{
                         background: 'rgba(255,255,255,0.06)',
                         border: error ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.1)',
@@ -245,8 +271,8 @@ export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
                   {/* Submit */}
                   <motion.button
                     onClick={handleSubmit}
-                    disabled={isLoading}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                    disabled={isLoading || items.length === 0}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-white disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                     style={{
                       background: 'linear-gradient(135deg, #F97316, #EF4444)',
                       boxShadow: '0 4px 24px rgba(249,115,22,0.35)',

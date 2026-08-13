@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { VoiceState } from '@/lib/types';
 
 // ============================================================
-// Full Web Speech API type declarations (not in TS lib by default)
+// Full Web Speech API type declarations
 // ============================================================
 interface SpeechRecognitionResultEntry {
   readonly transcript: string;
@@ -52,7 +52,6 @@ interface ISpeechRecognitionConstructor {
   new (): ISpeechRecognition;
 }
 
-// Augment Window with webkit prefix
 declare global {
   interface Window {
     SpeechRecognition?: ISpeechRecognitionConstructor;
@@ -83,7 +82,15 @@ export function useVoice({ onResult, lang = 'es-MX' }: UseVoiceOptions = {}): Us
   const [transcript, setTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
+
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
+  const onResultRef = useRef(onResult);
+  onResultRef.current = onResult;
+
+  const transcriptRef = useRef(transcript);
+  transcriptRef.current = transcript;
+
+  const hasReportedResultRef = useRef(false);
 
   const isSupported =
     typeof window !== 'undefined' &&
@@ -103,12 +110,20 @@ export function useVoice({ onResult, lang = 'es-MX' }: UseVoiceOptions = {}): Us
       return;
     }
 
-    const recognition = new SpeechRecognitionAPI();
+    // Abort any existing instance
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch {}
+    }
 
+    const recognition = new SpeechRecognitionAPI();
     recognition.lang = lang;
     recognition.interimResults = true;
     recognition.continuous = true;
     recognition.maxAlternatives = 1;
+
+    hasReportedResultRef.current = false;
 
     recognition.onstart = () => {
       setVoiceState('listening');
@@ -117,23 +132,23 @@ export function useVoice({ onResult, lang = 'es-MX' }: UseVoiceOptions = {}): Us
       setInterimTranscript('');
     };
 
+    // Fix for mobile: Rebuild the whole transcript from event.results
+    // Mobile browsers often start resultIndex at 0, which caused duplicated string concatenations
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let finalText = '';
-      let interimText = '';
+      let finalAccumulated = '';
+      let interimAccumulated = '';
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      for (let i = 0; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
-          finalText += result[0].transcript;
+          finalAccumulated += result[0].transcript + ' ';
         } else {
-          interimText += result[0].transcript;
+          interimAccumulated += result[0].transcript;
         }
       }
 
-      if (finalText) {
-        setTranscript((prev) => prev + finalText);
-      }
-      setInterimTranscript(interimText);
+      setTranscript(finalAccumulated.trim());
+      setInterimTranscript(interimAccumulated.trim());
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
@@ -157,47 +172,56 @@ export function useVoice({ onResult, lang = 'es-MX' }: UseVoiceOptions = {}): Us
     };
 
     recognitionRef.current = recognition;
-    recognition.start();
+    try {
+      recognition.start();
+    } catch {
+      // Ignore if already started
+    }
   }, [isSupported, lang]);
-
-  // Handle onResult separately via a ref to avoid stale closures
-  const onResultRef = useRef(onResult);
-  onResultRef.current = onResult;
-
-  const transcriptRef = useRef(transcript);
-  transcriptRef.current = transcript;
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.stop();
+      } catch {}
     }
   }, []);
 
-  // When state goes to 'processing', trigger the result callback
-  const [prevVoiceState, setPrevVoiceState] = useState<VoiceState>('idle');
-  if (voiceState === 'processing' && prevVoiceState === 'listening') {
-    setPrevVoiceState('processing');
-    const finalTranscript = transcriptRef.current;
-    if (finalTranscript.trim() && onResultRef.current) {
-      setTimeout(() => {
-        onResultRef.current!(finalTranscript);
+  // Process results cleanly via useEffect without double-firing
+  useEffect(() => {
+    if (voiceState === 'processing' && !hasReportedResultRef.current) {
+      hasReportedResultRef.current = true;
+      const textToProcess = transcriptRef.current.trim();
+
+      if (textToProcess && onResultRef.current) {
+        const timer = setTimeout(() => {
+          onResultRef.current?.(textToProcess);
+          setVoiceState('idle');
+        }, 300);
+        return () => clearTimeout(timer);
+      } else {
         setVoiceState('idle');
-        setPrevVoiceState('idle');
-      }, 400);
-    } else {
-      setVoiceState('idle');
-      setPrevVoiceState('idle');
+      }
     }
-  } else if (voiceState !== prevVoiceState && voiceState !== 'processing') {
-    setPrevVoiceState(voiceState);
-  }
+  }, [voiceState]);
 
   const resetTranscript = useCallback(() => {
     setTranscript('');
     setInterimTranscript('');
     setVoiceState('idle');
-    setPrevVoiceState('idle');
     setError(null);
+    hasReportedResultRef.current = false;
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch {}
+      }
+    };
   }, []);
 
   return {

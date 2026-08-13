@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, X, CheckCircle2, Volume2, ShoppingBag, Plus } from 'lucide-react';
 import { VoiceWaves } from './VoiceWaves';
@@ -16,11 +16,20 @@ interface VoiceAssistantProps {
 export function VoiceAssistant({ tacos }: VoiceAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [addedItems, setAddedItems] = useState<CartItem[]>([]);
+  const lastProcessedTranscriptRef = useRef<string>('');
   const { addItem, openCart } = useCart();
 
   const handleResult = (finalTranscript: string) => {
-    const parsed = parseVoiceOrder(finalTranscript, tacos);
+    const cleanTranscript = finalTranscript.trim();
+    if (!cleanTranscript) return;
+
+    // Prevent re-processing identical transcript from mobile speech callbacks
+    if (lastProcessedTranscriptRef.current === cleanTranscript) return;
+    lastProcessedTranscriptRef.current = cleanTranscript;
+
+    const parsed = parseVoiceOrder(cleanTranscript, tacos);
     const newItems: CartItem[] = [];
+
     for (const item of parsed) {
       const taco = tacos.find(
         (t) => t.nombre.toLowerCase() === item.nombreTaco.toLowerCase()
@@ -30,12 +39,22 @@ export function VoiceAssistant({ tacos }: VoiceAssistantProps) {
         newItems.push({ taco, cantidad: item.cantidad, especificaciones: item.especificaciones });
       }
     }
-    // Accumulate items — NO auto-close, NO auto-open cart
-    setAddedItems((prev) => [...prev, ...newItems]);
+
+    if (newItems.length > 0) {
+      setAddedItems((prev) => [...prev, ...newItems]);
+    }
   };
 
-  const { voiceState, transcript, interimTranscript, error, isSupported, startListening, stopListening, resetTranscript } =
-    useVoice({ onResult: handleResult });
+  const {
+    voiceState,
+    transcript,
+    interimTranscript,
+    error,
+    isSupported,
+    startListening,
+    stopListening,
+    resetTranscript,
+  } = useVoice({ onResult: handleResult });
 
   const isDone = addedItems.length > 0;
   const totalAdded = addedItems.reduce((sum, i) => sum + i.cantidad, 0);
@@ -45,6 +64,7 @@ export function VoiceAssistant({ tacos }: VoiceAssistantProps) {
       alert('Tu navegador no soporta reconocimiento de voz. Por favor usa Chrome o Edge.');
       return;
     }
+    lastProcessedTranscriptRef.current = '';
     setIsOpen(true);
   };
 
@@ -54,6 +74,7 @@ export function VoiceAssistant({ tacos }: VoiceAssistantProps) {
     setIsOpen(false);
     resetTranscript();
     setAddedItems([]);
+    lastProcessedTranscriptRef.current = '';
   };
 
   // View cart and close modal
@@ -62,11 +83,13 @@ export function VoiceAssistant({ tacos }: VoiceAssistantProps) {
     setIsOpen(false);
     resetTranscript();
     setAddedItems([]);
+    lastProcessedTranscriptRef.current = '';
     openCart();
   };
 
   // Continue listening — reset transcript but keep accumulated items
   const handleContinue = () => {
+    lastProcessedTranscriptRef.current = '';
     resetTranscript();
     startListening();
   };
@@ -243,7 +266,7 @@ export function VoiceAssistant({ tacos }: VoiceAssistantProps) {
                 )}
               </div>
 
-              {/* Accumulated items summary — shown silently, stays until user acts */}
+              {/* Accumulated items summary */}
               <AnimatePresence>
                 {isDone && (
                   <motion.div
@@ -257,7 +280,7 @@ export function VoiceAssistant({ tacos }: VoiceAssistantProps) {
                       <div className="flex items-center gap-2 mb-2">
                         <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
                         <p className="text-green-300 text-xs font-semibold uppercase tracking-wide">
-                          En el carrito ({totalAdded} taco{totalAdded !== 1 ? 's' : ''})
+                          En el carrito ({totalAdded} taco${totalAdded !== 1 ? 's' : ''})
                         </p>
                       </div>
                       <div className="space-y-1">
@@ -295,7 +318,7 @@ export function VoiceAssistant({ tacos }: VoiceAssistantProps) {
                     <button
                       onClick={isDone ? handleContinue : startListening}
                       disabled={isProcessing}
-                      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-white text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-white text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                       style={{
                         background: isDone
                           ? 'linear-gradient(135deg, #7C3AED, #6D28D9)'
@@ -314,7 +337,7 @@ export function VoiceAssistant({ tacos }: VoiceAssistantProps) {
                   ) : (
                     <button
                       onClick={stopListening}
-                      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-white text-sm transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-white text-sm transition-all cursor-pointer"
                       style={{
                         background: 'linear-gradient(135deg, #374151, #1F2937)',
                         border: '1px solid rgba(239,68,68,0.4)',
@@ -328,7 +351,7 @@ export function VoiceAssistant({ tacos }: VoiceAssistantProps) {
                     <button
                       onClick={handleConfirm}
                       disabled={isProcessing}
-                      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-white text-sm transition-all disabled:opacity-40"
+                      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-white text-sm transition-all disabled:opacity-40 cursor-pointer"
                       style={{
                         background: 'linear-gradient(135deg, #16A34A, #15803D)',
                         boxShadow: '0 4px 20px rgba(22,163,74,0.3)',
@@ -340,7 +363,7 @@ export function VoiceAssistant({ tacos }: VoiceAssistantProps) {
                   )}
                 </div>
 
-                {/* Row 2: cart actions — only visible after items were added */}
+                {/* Row 2: cart actions */}
                 <AnimatePresence>
                   {isDone && (
                     <motion.div
@@ -351,7 +374,7 @@ export function VoiceAssistant({ tacos }: VoiceAssistantProps) {
                     >
                       <button
                         onClick={handleViewCart}
-                        className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white text-sm transition-all"
+                        className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white text-sm transition-all cursor-pointer"
                         style={{
                           background: 'linear-gradient(135deg, #F97316, #EF4444)',
                           boxShadow: '0 4px 20px rgba(249,115,22,0.35)',
@@ -362,7 +385,7 @@ export function VoiceAssistant({ tacos }: VoiceAssistantProps) {
                       </button>
                       <button
                         onClick={handleClose}
-                        className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl text-white/50 text-sm font-medium hover:text-white/80 transition-colors"
+                        className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl text-white/50 text-sm font-medium hover:text-white/80 transition-colors cursor-pointer"
                         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
                       >
                         <X className="w-4 h-4" />
