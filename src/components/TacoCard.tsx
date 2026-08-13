@@ -32,16 +32,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   especial: '⭐ Especial',
 };
 
-// Image fallbacks per category
-const CATEGORY_EMOJI: Record<string, string> = {
-  alambre: '🔥',
-  taco: '🌮',
-  suizo: '🧀',
-  sincronizada: '🫓',
-  quesadilla: '🫔',
-  bebida: '🥤',
-  especial: '⭐',
-};
+
 
 export function TacoCard({ taco, index }: TacoCardProps) {
   const { addItem, openCart } = useCart();
@@ -60,7 +51,6 @@ export function TacoCard({ taco, index }: TacoCardProps) {
 
   const categoryColor = CATEGORY_COLORS[taco.categoria] || '#F97316';
   const categoryLabel = CATEGORY_LABELS[taco.categoria] || taco.categoria;
-  const emoji = CATEGORY_EMOJI[taco.categoria] || '🍽️';
   const isBebida = taco.categoria === 'bebida';
 
   return (
@@ -79,22 +69,28 @@ export function TacoCard({ taco, index }: TacoCardProps) {
         borderColor: `${categoryColor}30`,
       }}
     >
-      {/* Visual Area */}
-      <div
-        className="relative h-40 overflow-hidden flex items-center justify-center"
-        style={{ background: `radial-gradient(ellipse at 50% 50%, ${categoryColor}18, transparent 70%)` }}
-      >
-        {/* Emoji visual (decorative) */}
+      {/* Photo Area */}
+      <div className="relative h-44 overflow-hidden">
+        <Image
+          src={taco.imagen_url}
+          alt={taco.nombre}
+          fill
+          className="object-cover transition-transform duration-500 group-hover:scale-110"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          onError={(e) => {
+            // Fallback to emoji overlay if image fails
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
+        />
+        {/* Gradient overlay */}
         <div
-          className="text-6xl select-none opacity-60 transition-transform duration-500 group-hover:scale-110 group-hover:opacity-80"
-          aria-hidden="true"
-        >
-          {emoji}
-        </div>
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(13,10,7,0.9) 100%)' }}
+        />
 
         {/* Category Badge */}
         <div
-          className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-semibold text-white"
+          className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-semibold text-white z-10"
           style={{ background: `${categoryColor}CC`, backdropFilter: 'blur(8px)' }}
         >
           {categoryLabel}
@@ -102,8 +98,8 @@ export function TacoCard({ taco, index }: TacoCardProps) {
 
         {/* Price Badge */}
         <div
-          className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-sm font-bold text-white"
-          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
+          className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-sm font-bold text-white z-10"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
         >
           $<span style={{ color: '#F59E0B' }}>{taco.precio.toFixed(0)}</span>
           {taco.unidad && (
@@ -111,19 +107,19 @@ export function TacoCard({ taco, index }: TacoCardProps) {
           )}
         </div>
 
-        {/* Hot indicator for alambres */}
+        {/* Hover icon */}
         {taco.categoria === 'alambre' && (
-          <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
             <Flame className="w-4 h-4 text-orange-400 fill-orange-400" />
           </div>
         )}
         {isBebida && (
-          <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
             <Coffee className="w-4 h-4 text-sky-400" />
           </div>
         )}
         {!isBebida && taco.categoria !== 'alambre' && (
-          <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
             <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
           </div>
         )}
