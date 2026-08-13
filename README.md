@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌮 Taquería El Rincón Auténtico
 
-## Getting Started
+Aplicación web moderna e interactiva para taquerías con pedidos por voz, carrito de compras dinámico y control de ventas / corte de turno en tiempo real.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 Despliegue en Render
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Para desplegar esta aplicación en **[Render.com](https://render.com/)**:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Opción 1: Automático con Blueprint (`render.yaml`)
+1. Inicia sesión en [dashboard.render.com](https://dashboard.render.com/).
+2. Haz clic en **New +** y selecciona **Blueprint**.
+3. Conecta el repositorio de GitHub: `https://github.com/adriandoct/taqueria`.
+4. Render detectará automáticamente el archivo `render.yaml` y configurará el servicio web.
+5. Haz clic en **Apply**.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Opción 2: Configuración Manual como Web Service
+1. En [dashboard.render.com](https://dashboard.render.com/), haz clic en **New +** -> **Web Service**.
+2. Conecta tu repositorio `adriandoct/taqueria`.
+3. Configura los siguientes campos:
+   - **Name**: `taqueria`
+   - **Environment**: `Node`
+   - **Region**: `Oregon` (o tu preferencia)
+   - **Branch**: `master` o `main`
+   - **Build Command**: `npm install && npm run build`
+   - **Start Command**: `npm run start`
+   - **Plan**: `Free`
+4. *(Opcional)* En **Environment Variables**, añade:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+5. Haz clic en **Deploy Web Service**.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## ✨ Características Principales
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **🎙️ Pedidos por Voz en Español (es-MX)**:
+   - Reconocimiento de voz en tiempo real con Web Speech API.
+   - Procesamiento inteligente de tacos, cantidades y especificaciones (ej: *"Quiero 3 tacos al pastor con todo y 2 de birria sin cebolla"*).
+   - Acumulación silenciosa en el carrito sin cierres molestos.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **💰 Módulo de Corte de Turno (Corte de Caja)**:
+   - Contador en vivo de ventas en la barra de navegación (`$X MXN`).
+   - Resumen con total de ventas, órdenes, tacos servidos y ticket promedio.
+   - Gráfica de desglose de ventas por especialidad (Pastor, Birria, Suadero, etc.).
+   - Control de estados de pedidos en cocina (`Pendiente`, `En Cocina`, `Listo`, `Entregado`).
+   - Registro rápido de ventas de mostrador en efectivo.
+   - Impresión de ticket de corte y cierre de turno.
 
-## Deploy on Vercel
+3. **📱 Menú Interactivo y Carrito**:
+   - Tarjetas con fotografías de alta calidad, precios y personalizaciones.
+   - Panel de carrito deslizable con edición de cantidades y notas.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🛠️ Stack Tecnológico
+
+- **Framework**: Next.js 16 (App Router, React 19, TypeScript)
+- **Estilos**: Tailwind CSS con Shadcn UI y Framer Motion
+- **Estado**: Zustand con persistencia local y fallback offline
+- **Base de Datos**: Supabase (PostgreSQL) con fallback seguro
+- **Voz**: Web Speech API nativa del navegador
