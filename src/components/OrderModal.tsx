@@ -2,10 +2,10 @@
 
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle2, Loader2, User, Receipt } from 'lucide-react';
+import { X, CheckCircle2, Loader2, User, Receipt, Tag } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { useShift } from '@/hooks/useShift';
-import { Pedido } from '@/lib/types';
+import { Pedido, CartItem } from '@/lib/types';
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -19,6 +19,7 @@ export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
   const [clientName, setClientName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [confirmedItems, setConfirmedItems] = useState<CartItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const isSubmittingRef = useRef(false);
 
@@ -72,6 +73,9 @@ export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
       // Register immediately in shift store for live sales sum
       registerOrderLocally(createdOrder);
 
+      // Save confirmed items for receipt view
+      setConfirmedItems(orderItemsSnapshot);
+
       // Clear cart immediately so it cannot be submitted twice
       clearCart();
 
@@ -92,6 +96,7 @@ export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
     }
     setClientName('');
     setOrderId(null);
+    setConfirmedItems([]);
     setError(null);
     isSubmittingRef.current = false;
   };
@@ -152,7 +157,7 @@ export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
               {orderId ? (
                 /* Success State */
                 <motion.div
-                  className="text-center py-4"
+                  className="text-center py-2"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ type: 'spring' }}
@@ -160,31 +165,55 @@ export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
                   <motion.div
                     animate={{ rotate: [0, 360] }}
                     transition={{ duration: 0.5, ease: 'backOut' }}
-                    className="inline-block mb-4"
+                    className="inline-block mb-3"
                   >
-                    <CheckCircle2 className="w-20 h-20 text-green-400" />
+                    <CheckCircle2 className="w-16 h-16 text-green-400" />
                   </motion.div>
-                  <h3 className="text-white text-2xl font-bold mb-2">¡Gracias, {clientName}!</h3>
-                  <p className="text-white/50 text-sm mb-4">Tu pedido fue registrado exitosamente en el sistema</p>
+                  <h3 className="text-white text-2xl font-bold mb-1">¡Gracias, {clientName}!</h3>
+                  <p className="text-white/50 text-xs mb-4">Tu pedido con todas tus especificaciones fue registrado con éxito</p>
 
                   <div
-                    className="rounded-2xl p-4 mb-6 text-left"
-                    style={{ background: 'rgba(255,255,255,0.04)' }}
+                    className="rounded-2xl p-4 mb-4 text-left space-y-2"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
                   >
-                    <div className="flex justify-between items-center mb-1">
-                      <p className="text-white/40 text-xs">Número de pedido</p>
+                    <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                      <div>
+                        <p className="text-white/40 text-xs">Número de orden</p>
+                        <p className="text-orange-400 font-mono font-bold text-sm">
+                          #{orderId.slice(0, 8).toUpperCase()}
+                        </p>
+                      </div>
                       <span className="text-[10px] text-green-400 font-semibold px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20">
-                        ✓ Sumado al turno
+                        ✓ En Cocina
                       </span>
                     </div>
-                    <p className="text-orange-400 font-mono font-bold text-sm">
-                      #{orderId.slice(0, 8).toUpperCase()}
-                    </p>
+
+                    {/* Confirmed items list with specs */}
+                    <div className="space-y-1.5 pt-1 max-h-36 overflow-y-auto">
+                      {confirmedItems.map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-start text-xs">
+                          <div>
+                            <span className="text-white/80 font-medium">
+                              {item.cantidad}× {item.taco.nombre}
+                            </span>
+                            {item.especificaciones && (
+                              <p className="text-orange-300/80 text-[11px] flex items-center gap-1 mt-0.5">
+                                <Tag className="w-2.5 h-2.5" />
+                                {item.especificaciones}
+                              </p>
+                            )}
+                          </div>
+                          <span className="text-amber-400 font-semibold">
+                            ${(item.taco.precio * item.cantidad).toFixed(0)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-center gap-2 text-amber-300/60 text-sm mb-6">
+                  <div className="flex items-center justify-center gap-2 text-amber-300/70 text-xs mb-5">
                     <span>⏱</span>
-                    <span>Tiempo estimado: 15–20 minutos</span>
+                    <span>Tiempo estimado de preparación: 15–20 minutos</span>
                   </div>
 
                   <button
@@ -201,24 +230,45 @@ export function OrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
                   {/* Order Summary */}
                   <div
                     className="rounded-2xl p-4 mb-5"
-                    style={{ background: 'rgba(255,255,255,0.04)' }}
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
                   >
                     <p className="text-white/40 text-xs font-medium mb-3 uppercase tracking-wider">
                       Resumen del pedido
                     </p>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                    <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
                       {items.map((item, i) => (
-                        <div key={i} className="flex justify-between items-center">
-                          <div>
-                            <span className="text-white/80 text-sm">
+                        <div key={i} className="flex justify-between items-start">
+                          <div className="flex-1 pr-2">
+                            <span className="text-white/90 text-sm font-medium">
                               {item.cantidad}× {item.taco.nombre}
                             </span>
-                            {item.especificaciones && (
-                              <p className="text-white/30 text-xs">{item.especificaciones}</p>
+                            {item.especificaciones ? (
+                              <div className="mt-1 flex items-center gap-1 flex-wrap">
+                                {item.especificaciones.split(',').map((s, sIdx) => {
+                                  const trimmedSpec = s.trim();
+                                  const isSin = trimmedSpec.startsWith('sin ');
+                                  return (
+                                    <span
+                                      key={sIdx}
+                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold"
+                                      style={{
+                                        background: isSin ? 'rgba(239,68,68,0.15)' : 'rgba(249,115,22,0.15)',
+                                        color: isSin ? '#FCA5A5' : '#FDBA74',
+                                        border: isSin ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(249,115,22,0.25)',
+                                      }}
+                                    >
+                                      <Tag className="w-2.5 h-2.5" />
+                                      {trimmedSpec}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <p className="text-white/25 text-[11px] mt-0.5 italic">Sin especificaciones</p>
                             )}
                           </div>
-                          <span className="text-amber-400 text-sm font-semibold">
-                            ${(item.taco.precio * item.cantidad).toFixed(0)}
+                          <span className="text-amber-400 text-sm font-semibold whitespace-nowrap">
+                            ${(item.taco.precio * item.cantidad).toFixed(0)} MXN
                           </span>
                         </div>
                       ))}

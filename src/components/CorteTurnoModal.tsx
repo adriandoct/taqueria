@@ -469,18 +469,37 @@ export function CorteTurnoModal({ tacos = [] }: CorteTurnoModalProps) {
                           </div>
 
                           {/* Order Details */}
-                          <div className="bg-black/30 rounded-xl p-2.5 mb-3 space-y-1 text-xs">
+                          <div className="bg-black/30 rounded-xl p-2.5 mb-3 space-y-1.5 text-xs">
                             {order.detalles_orden?.map((item, idx) => (
-                              <div key={idx} className="flex justify-between items-center text-white/70">
-                                <span>
-                                  <strong>{item.cantidad}×</strong> {item.taco?.nombre}
+                              <div key={idx} className="flex justify-between items-start text-white/80 border-b border-white/5 pb-1 last:border-0 last:pb-0">
+                                <div>
+                                  <span className="font-semibold text-white">
+                                    <strong className="text-orange-400 font-bold">{item.cantidad}×</strong> {item.taco?.nombre}
+                                  </span>
                                   {item.especificaciones && (
-                                    <span className="text-orange-300/60 ml-1 italic">
-                                      ({item.especificaciones})
-                                    </span>
+                                    <div className="mt-0.5 flex items-center gap-1 flex-wrap">
+                                      {item.especificaciones.split(',').map((s, sIdx) => {
+                                        const trimmed = s.trim();
+                                        const isSin = trimmed.startsWith('sin ');
+                                        return (
+                                          <span
+                                            key={sIdx}
+                                            className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-semibold"
+                                            style={{
+                                              background: isSin ? 'rgba(239,68,68,0.2)' : 'rgba(249,115,22,0.2)',
+                                              color: isSin ? '#FCA5A5' : '#FDBA74',
+                                              border: isSin ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(249,115,22,0.3)',
+                                            }}
+                                          >
+                                            <Tag className="w-2 h-2" />
+                                            {trimmed}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
                                   )}
-                                </span>
-                                <span className="text-white/40">
+                                </div>
+                                <span className="text-white/50 text-xs font-mono">
                                   ${((item.taco?.precio || 0) * item.cantidad).toFixed(0)}
                                 </span>
                               </div>

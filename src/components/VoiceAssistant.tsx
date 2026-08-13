@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, X, CheckCircle2, Volume2, ShoppingBag, Plus } from 'lucide-react';
+import { Mic, MicOff, X, CheckCircle2, Volume2, ShoppingBag, Plus, Tag } from 'lucide-react';
 import { VoiceWaves } from './VoiceWaves';
 import { useVoice } from '@/hooks/useVoice';
 import { useCart } from '@/hooks/useCart';
@@ -283,17 +283,37 @@ export function VoiceAssistant({ tacos }: VoiceAssistantProps) {
                           En el carrito ({totalAdded} taco${totalAdded !== 1 ? 's' : ''})
                         </p>
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {addedItems.map((item, i) => (
-                          <div key={i} className="flex justify-between items-center text-xs">
-                            <span className="text-white/70">
-                              {item.cantidad}× {item.taco.nombre}
+                          <div key={i} className="flex justify-between items-start text-xs border-b border-green-500/10 pb-1.5 last:border-0 last:pb-0">
+                            <div>
+                              <span className="text-white/90 font-medium">
+                                {item.cantidad}× {item.taco.nombre}
+                              </span>
                               {item.especificaciones && (
-                                <span className="text-white/35 ml-1">({item.especificaciones})</span>
+                                <div className="mt-0.5 flex items-center gap-1 flex-wrap">
+                                  {item.especificaciones.split(',').map((s, sIdx) => {
+                                    const trimmed = s.trim();
+                                    const isSin = trimmed.startsWith('sin ');
+                                    return (
+                                      <span
+                                        key={sIdx}
+                                        className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-semibold"
+                                        style={{
+                                          background: isSin ? 'rgba(239,68,68,0.2)' : 'rgba(249,115,22,0.2)',
+                                          color: isSin ? '#FCA5A5' : '#FDBA74',
+                                        }}
+                                      >
+                                        <Tag className="w-2 h-2" />
+                                        {trimmed}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
                               )}
-                            </span>
-                            <span className="text-amber-400 font-semibold">
-                              ${(item.taco.precio * item.cantidad).toFixed(0)}
+                            </div>
+                            <span className="text-amber-400 font-semibold whitespace-nowrap">
+                              ${(item.taco.precio * item.cantidad).toFixed(0)} MXN
                             </span>
                           </div>
                         ))}
