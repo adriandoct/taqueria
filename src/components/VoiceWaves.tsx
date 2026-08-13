@@ -17,7 +17,6 @@ export function VoiceWaves({ isActive, isProcessing }: VoiceWavesProps) {
         <motion.div
           key={i}
           className="w-1.5 rounded-full"
-          style={{ backgroundColor: color }}
           animate={
             isActive
               ? {
