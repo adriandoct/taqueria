@@ -1,69 +1,170 @@
-import Image from "next/image";
+import { Suspense } from 'react';
+import { MenuGrid, getTacosForClient } from '@/components/MenuGrid';
+import { VoiceAssistant } from '@/components/VoiceAssistant';
+import { Flame, Mic, Star } from 'lucide-react';
 
-export default function Home() {
+function MenuSkeleton() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-2xl overflow-hidden animate-pulse"
+          style={{ background: 'rgba(255,255,255,0.04)', height: '380px' }}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      ))}
     </div>
+  );
+}
+
+// Client component wrapper for VoiceAssistant with server-fetched tacos
+async function VoiceAssistantWrapper() {
+  const tacos = await getTacosForClient();
+  return <VoiceAssistant tacos={tacos} />;
+}
+
+export default async function Home() {
+  return (
+    <main className="min-h-screen">
+      {/* ---- HERO SECTION ---- */}
+      <section
+        className="relative min-h-screen flex items-center justify-center overflow-hidden"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(249,115,22,0.15) 0%, transparent 60%), #0D0A07',
+        }}
+      >
+        {/* Decorative blobs */}
+        <div
+          className="absolute top-1/4 left-10 w-80 h-80 rounded-full blur-[120px] pointer-events-none"
+          style={{ background: 'rgba(249,115,22,0.07)' }}
+        />
+        <div
+          className="absolute bottom-1/4 right-10 w-96 h-96 rounded-full blur-[140px] pointer-events-none"
+          style={{ background: 'rgba(239,68,68,0.05)' }}
+        />
+
+        {/* Content */}
+        <div className="relative z-10 text-center px-6 max-w-4xl mx-auto pt-24 pb-32">
+          {/* Badge */}
+          <div
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 text-sm font-semibold"
+            style={{
+              background: 'rgba(249,115,22,0.1)',
+              border: '1px solid rgba(249,115,22,0.25)',
+              color: '#F97316',
+            }}
+          >
+            <Star className="w-4 h-4 fill-current" />
+            El sabor auténtico de México
+            <Star className="w-4 h-4 fill-current" />
+          </div>
+
+          {/* Headline */}
+          <h1
+            className="text-6xl md:text-8xl font-black mb-6 leading-none tracking-tight"
+            style={{ fontFamily: 'var(--font-outfit)' }}
+          >
+            <span className="text-white">Tacos que</span>
+            <br />
+            <span
+              className="inline-block"
+              style={{
+                background: 'linear-gradient(135deg, #F97316 0%, #EF4444 50%, #F59E0B 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              enamoran
+            </span>
+          </h1>
+
+          <p className="text-white/50 text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed">
+            Recetas tradicionales, ingredientes frescos del mercado y el sazón que se hereda.
+            Pide en línea o con tu voz en español.
+          </p>
+
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <a
+              href="#menu"
+              className="group flex items-center gap-2 px-8 py-4 rounded-2xl font-bold text-white text-base transition-all"
+              style={{
+                background: 'linear-gradient(135deg, #F97316, #EF4444)',
+                boxShadow: '0 8px 30px rgba(249,115,22,0.35)',
+              }}
+            >
+              <Flame className="w-5 h-5 group-hover:animate-pulse" />
+              Ver el Menú
+            </a>
+            <div
+              className="flex items-center gap-2 px-6 py-4 rounded-2xl text-white/60 text-sm"
+              style={{
+                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(255,255,255,0.03)',
+              }}
+            >
+              <Mic className="w-4 h-4 text-orange-400" />
+              O usa el micrófono abajo →
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="flex flex-wrap justify-center gap-8 mt-20">
+            {[
+              { number: '8+', label: 'Tipos de taco' },
+              { number: '100%', label: 'Ingredientes frescos' },
+              { number: '15min', label: 'Tiempo promedio' },
+            ].map((stat) => (
+              <div key={stat.label} className="text-center">
+                <p
+                  className="text-3xl font-black mb-1"
+                  style={{ color: '#F59E0B' }}
+                >
+                  {stat.number}
+                </p>
+                <p className="text-white/40 text-sm">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/25">
+          <span className="text-xs uppercase tracking-widest">Desplaza</span>
+          <div className="w-px h-12 bg-gradient-to-b from-white/20 to-transparent" />
+        </div>
+      </section>
+
+      {/* ---- MENU SECTION ---- */}
+      <section
+        className="max-w-7xl mx-auto px-6 py-24"
+        id="menu"
+      >
+        <Suspense fallback={<MenuSkeleton />}>
+          <MenuGrid />
+        </Suspense>
+      </section>
+
+      {/* ---- FOOTER ---- */}
+      <footer
+        className="text-center py-10 px-6"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+      >
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <Flame className="w-4 h-4 text-orange-500" />
+          <span className="text-white font-bold text-sm">Taquería El Rincón Auténtico</span>
+        </div>
+        <p className="text-white/25 text-xs">
+          Hecho con 🌮 y mucho sazón · Todos los derechos reservados
+        </p>
+      </footer>
+
+      {/* ---- VOICE ASSISTANT (floating) ---- */}
+      <Suspense fallback={null}>
+        <VoiceAssistantWrapper />
+      </Suspense>
+    </main>
   );
 }
