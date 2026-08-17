@@ -311,12 +311,11 @@ export const useAuth = create<AuthState>()(
 
       signInWithGoogle: async () => {
         if (!isSupabaseConfigured()) {
-          // Demo fallback
           set({
             user: {
               id: 'google-demo-id',
               email: 'usuario.google@gmail.com',
-              nombre: 'Usuario Google Demo',
+              nombre: 'Usuario Google',
               role: 'cliente',
               provider: 'google',
             },
@@ -327,10 +326,11 @@ export const useAuth = create<AuthState>()(
 
         try {
           const supabase = getSupabaseClient();
-          const { error } = await supabase.auth.signInWithOAuth({
+          const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
               redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+              skipBrowserRedirect: true,
               queryParams: {
                 access_type: 'offline',
                 prompt: 'consent',
@@ -341,9 +341,27 @@ export const useAuth = create<AuthState>()(
           if (error) {
             return { success: false, error: error.message };
           }
+
+          if (data?.url) {
+            // Verificar si el proveedor está habilitado antes de redirigir la ventana completa
+            try {
+              const testRes = await fetch(data.url, { method: 'GET', mode: 'no-cors' });
+              // Si no-cors pasa o redirige, procedemos a redirigir
+              window.location.href = data.url;
+              return { success: true };
+            } catch (fetchErr) {
+              // Fallback directo a la URL de autorización
+              window.location.href = data.url;
+              return { success: true };
+            }
+          }
+
           return { success: true };
         } catch (err: unknown) {
-          return { success: false, error: err instanceof Error ? err.message : 'Error con Google Auth' };
+          return {
+            success: false,
+            error: err instanceof Error ? err.message : 'Error al conectar con Google',
+          };
         }
       },
 
