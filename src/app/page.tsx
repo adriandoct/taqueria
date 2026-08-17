@@ -5,6 +5,10 @@ import { CorteTurnoModal } from '@/components/CorteTurnoModal';
 import { ShiftBanner } from '@/components/ShiftBanner';
 import { Flame, Mic, Star } from 'lucide-react';
 
+import { AuthModal } from '@/components/AuthModal';
+import { KitchenDisplayModal } from '@/components/KitchenDisplayModal';
+import { ClientOrdersModal } from '@/components/ClientOrdersModal';
+
 function MenuSkeleton() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -19,13 +23,16 @@ function MenuSkeleton() {
   );
 }
 
-// Client component wrapper for VoiceAssistant and CorteTurnoModal with server-fetched tacos
+// Client component wrapper for VoiceAssistant, Modals, and role views with server-fetched tacos
 async function ClientHelpersWrapper() {
   const tacos = await getTacosForClient();
   return (
     <>
       <VoiceAssistant tacos={tacos} />
       <CorteTurnoModal tacos={tacos} />
+      <AuthModal />
+      <KitchenDisplayModal />
+      <ClientOrdersModal />
     </>
   );
 }

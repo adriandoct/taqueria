@@ -1,10 +1,24 @@
 -- ============================================================
--- TAQUERIA APP — Supabase Schema
+-- TAQUERIA APP — Supabase Schema con Autenticación y 3 Roles
 -- Run this in your Supabase SQL Editor
 -- ============================================================
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ============================================================
+-- TABLE: profiles (Roles: admin, taquero, cliente)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id            UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email         TEXT NOT NULL,
+  nombre        TEXT,
+  avatar_url    TEXT,
+  role          TEXT NOT NULL DEFAULT 'cliente'
+                CHECK (role IN ('admin', 'taquero', 'cliente')),
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 -- ============================================================
 -- TABLE: menu_tacos
@@ -29,18 +43,66 @@ CREATE TABLE IF NOT EXISTS public.pedidos (
   detalles_orden      JSONB NOT NULL DEFAULT '[]',
   total               DECIMAL(10, 2) NOT NULL DEFAULT 0,
   estado              TEXT NOT NULL DEFAULT 'pendiente'
-                      CHECK (estado IN ('pendiente', 'en preparación', 'listo', 'entregado')),
+                      CHECK (estado IN ('pendiente', 'en preparación', 'listo', 'entregado', 'cancelado')),
   transcripcion_voz   TEXT,
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================
--- ROW LEVEL SECURITY
+-- TRIGGER: Auto-creación de Perfil al Registrarse (Email o Google)
+-- Asigna automáticamente 'admin' si el correo es admin@admin.com
 -- ============================================================
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, nombre, avatar_url, role)
+  VALUES (
+    new.id,
+    new.email,
+    COALESCE(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
+    new.raw_user_meta_data->>'avatar_url',
+    CASE 
+      WHEN LOWER(new.email) = 'admin@admin.com' THEN 'admin'
+      WHEN new.raw_user_meta_data->>'role' IN ('admin', 'taquero', 'cliente') THEN new.raw_user_meta_data->>'role'
+      ELSE 'cliente'
+    END
+  )
+  ON CONFLICT (id) DO UPDATE
+  SET 
+    email = EXCLUDED.email,
+    nombre = EXCLUDED.nombre,
+    avatar_url = EXCLUDED.avatar_url,
+    role = CASE 
+      WHEN LOWER(EXCLUDED.email) = 'admin@admin.com' THEN 'admin'
+      ELSE profiles.role 
+    END,
+    updated_at = NOW();
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Enable RLS on both tables
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT OR UPDATE ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ============================================================
+-- ROW LEVEL SECURITY (RLS)
+-- ============================================================
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.menu_tacos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pedidos ENABLE ROW LEVEL SECURITY;
+
+-- profiles: Anyone can read basic profiles, user can update their own
+CREATE POLICY "Public profiles are readable by authenticated users"
+  ON public.profiles
+  FOR SELECT
+  USING (TRUE);
+
+CREATE POLICY "Users can update own profile"
+  ON public.profiles
+  FOR UPDATE
+  USING (auth.uid() = id);
 
 -- menu_tacos: Anyone can read available items
 CREATE POLICY "Public can read available menu items"
@@ -48,20 +110,26 @@ CREATE POLICY "Public can read available menu items"
   FOR SELECT
   USING (disponible = TRUE);
 
--- pedidos: Anyone can insert new orders (no auth required)
+-- pedidos: Anyone can create orders
 CREATE POLICY "Anyone can create orders"
   ON public.pedidos
   FOR INSERT
   WITH CHECK (TRUE);
 
--- pedidos: Anyone can read their own order by id (we return id on creation)
+-- pedidos: Anyone can read orders
 CREATE POLICY "Public can read pedidos"
   ON public.pedidos
   FOR SELECT
   USING (TRUE);
 
+-- pedidos: Anyone can update order status (or admin/taquero)
+CREATE POLICY "Public can update pedidos status"
+  ON public.pedidos
+  FOR UPDATE
+  USING (TRUE);
+
 -- ============================================================
--- SEED DATA — 8 Classic Tacos
+-- SEED DATA — Menú
 -- ============================================================
 INSERT INTO public.menu_tacos (nombre, descripcion, precio, imagen_url, disponible, categoria) VALUES
 (
@@ -127,4 +195,5 @@ INSERT INTO public.menu_tacos (nombre, descripcion, precio, imagen_url, disponib
   '/tacos/chorizo.png',
   TRUE,
   'cerdo'
-);
+)
+ON CONFLICT DO NOTHING;

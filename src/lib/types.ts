@@ -56,3 +56,15 @@ export interface CorteTurnoSummary {
   fechaInicioTurno: string;
   fechaCorte: string;
 }
+
+export type UserRole = 'admin' | 'taquero' | 'cliente';
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  nombre: string;
+  avatar_url?: string;
+  role: UserRole;
+  provider?: 'email' | 'google';
+}
+
