@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS public.menu_tacos (
   precio        DECIMAL(10, 2) NOT NULL,
   imagen_url    TEXT,
   disponible    BOOLEAN NOT NULL DEFAULT TRUE,
-  categoria     TEXT NOT NULL DEFAULT 'res',
+  categoria     TEXT NOT NULL DEFAULT 'alambre',
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -87,50 +87,55 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ============================================================
--- ROW LEVEL SECURITY (RLS)
+-- ROW LEVEL SECURITY (RLS) & POLICIES (Idempotent)
 -- ============================================================
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.menu_tacos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pedidos ENABLE ROW LEVEL SECURITY;
 
--- profiles: Anyone can read basic profiles, user can update their own
+-- profiles policies
+DROP POLICY IF EXISTS "Public profiles are readable by authenticated users" ON public.profiles;
 CREATE POLICY "Public profiles are readable by authenticated users"
   ON public.profiles
   FOR SELECT
   USING (TRUE);
 
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile"
   ON public.profiles
   FOR UPDATE
   USING (auth.uid() = id);
 
--- menu_tacos: Anyone can read available items
+-- menu_tacos policies
+DROP POLICY IF EXISTS "Public can read available menu items" ON public.menu_tacos;
 CREATE POLICY "Public can read available menu items"
   ON public.menu_tacos
   FOR SELECT
   USING (disponible = TRUE);
 
--- pedidos: Anyone can create orders
+-- pedidos policies
+DROP POLICY IF EXISTS "Anyone can create orders" ON public.pedidos;
 CREATE POLICY "Anyone can create orders"
   ON public.pedidos
   FOR INSERT
   WITH CHECK (TRUE);
 
--- pedidos: Anyone can read orders
+DROP POLICY IF EXISTS "Public can read pedidos" ON public.pedidos;
 CREATE POLICY "Public can read pedidos"
   ON public.pedidos
   FOR SELECT
   USING (TRUE);
 
--- pedidos: Anyone can update order status (or admin/taquero)
+DROP POLICY IF EXISTS "Public can update pedidos status" ON public.pedidos;
 CREATE POLICY "Public can update pedidos status"
   ON public.pedidos
   FOR UPDATE
   USING (TRUE);
 
 -- ============================================================
--- SEED DATA — Menú Real Taquería Jefe de Jefes
+-- SEED DATA — Menú Real Taquería Jefe de Jefes (18 Productos)
 -- ============================================================
+-- Limpiar o insertar los 18 productos reales
 INSERT INTO public.menu_tacos (nombre, descripcion, precio, imagen_url, disponible, categoria) VALUES
 -- ALAMBRES
 ('Alambre al Pastor', 'Pimiento · Cebolla · Tocino · Carne al pastor · Queso', 130.00, '/menu/alambre-pastor.png', TRUE, 'alambre'),
@@ -158,4 +163,3 @@ INSERT INTO public.menu_tacos (nombre, descripcion, precio, imagen_url, disponib
 ('Refresco en Vidrio', 'Refresco clásico en botella de vidrio, bien frío.', 30.00, '/menu/bebidas.png', TRUE, 'bebida'),
 ('Boing', 'Jugo Boing desechable de 354 ml. Natural y refrescante.', 30.00, '/menu/bebidas.png', TRUE, 'bebida')
 ON CONFLICT DO NOTHING;
-
