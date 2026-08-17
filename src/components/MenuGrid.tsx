@@ -184,12 +184,16 @@ export const MENU_JEFE: Taco[] = [
 
 // Category metadata for display
 export const CATEGORY_INFO: Record<string, { label: string; emoji: string; description: string }> = {
-  alambre: { label: 'Alambres', emoji: '🔥', description: 'Platillos preparados con carnes asadas, verduras y queso' },
-  taco: { label: 'Tacos', emoji: '🌮', description: 'Órdenes de 5 tacos — tasajo, chuleta o pastor' },
-  suizo: { label: 'Suizo', emoji: '🧀', description: 'Suizo de carne con queso gratinado' },
-  sincronizada: { label: 'Sincronizada', emoji: '🫓', description: 'Tortilla de harina con jamón y queso' },
-  quesadilla: { label: 'Quesadillas', emoji: '🫔', description: 'Quesadillas de maíz con queso y relleno' },
-  bebida: { label: 'Bebidas', emoji: '🥤', description: 'Refrescos y jugos para acompañar tu pedido' },
+  alambre: { label: 'Alambres Especiales', emoji: '🔥', description: 'Platillos preparados con carnes asadas, verduras y queso fundido' },
+  taco: { label: 'Órdenes de Tacos (5 pzas)', emoji: '🌮', description: 'Órdenes de 5 tacos — tasajo, chuleta o pastor con cebolla y cilantro' },
+  suizo: { label: 'Suizo', emoji: '🧀', description: 'Suizo de carne con queso gratinado al comal' },
+  sincronizada: { label: 'Sincronizadas', emoji: '🫓', description: 'Tortilla de harina con jamón y queso, doradita' },
+  quesadilla: { label: 'Quesadillas', emoji: '🫔', description: 'Quesadillas de maíz con queso oaxaca y relleno' },
+  bebida: { label: 'Bebidas', emoji: '🥤', description: 'Refrescos fríos y jugos para acompañar' },
+  cerdo: { label: 'Tacos de Cerdo', emoji: '🥩', description: 'Pastor, carnitas y chorizo' },
+  res: { label: 'Tacos de Res', emoji: '🥩', description: 'Suadero, asada, birria y tripa' },
+  mixto: { label: 'Especialidades', emoji: '🌮', description: 'Campechanos y combinaciones de la casa' },
+  especial: { label: 'Especiales', emoji: '⭐', description: 'Especialidades de la casa' },
 };
 
 async function getTacos(): Promise<Taco[]> {
@@ -203,13 +207,20 @@ async function getTacos(): Promise<Taco[]> {
     const { data, error } = await supabase
       .from('menu_tacos')
       .select('*')
-      .eq('disponible', true)
-      .order('categoria');
+      .eq('disponible', true);
 
-    if (error) throw error;
-    return (data as Taco[]) || MENU_JEFE;
-  } catch {
-    console.warn('Supabase unavailable, using menu data');
+    if (error) {
+      console.warn('Supabase fetch error, fallback to MENU_JEFE:', error);
+      return MENU_JEFE;
+    }
+
+    if (!data || data.length === 0) {
+      return MENU_JEFE;
+    }
+
+    return data as Taco[];
+  } catch (err) {
+    console.warn('Supabase unavailable, using menu data:', err);
     return MENU_JEFE;
   }
 }
@@ -219,12 +230,18 @@ export async function MenuGrid() {
 
   // Group items by category
   const grouped = tacos.reduce<Record<string, Taco[]>>((acc, taco) => {
-    if (!acc[taco.categoria]) acc[taco.categoria] = [];
-    acc[taco.categoria].push(taco);
+    const cat = taco.categoria || 'alambre';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(taco);
     return acc;
   }, {});
 
-  const categoryOrder = ['alambre', 'taco', 'suizo', 'sincronizada', 'quesadilla', 'bebida'];
+  const preferredOrder = ['alambre', 'taco', 'suizo', 'sincronizada', 'quesadilla', 'bebida', 'cerdo', 'res', 'mixto'];
+  const presentCategories = Object.keys(grouped);
+  const orderedCategories = [
+    ...preferredOrder.filter((cat) => presentCategories.includes(cat)),
+    ...presentCategories.filter((cat) => !preferredOrder.includes(cat)),
+  ];
 
   return (
     <section id="menu" className="w-full space-y-16">
@@ -255,10 +272,10 @@ export async function MenuGrid() {
       </div>
 
       {/* Categories */}
-      {categoryOrder.map((cat) => {
+      {orderedCategories.map((cat) => {
         const items = grouped[cat];
         if (!items || items.length === 0) return null;
-        const info = CATEGORY_INFO[cat] ?? { label: cat, emoji: '🍽️', description: '' };
+        const info = CATEGORY_INFO[cat] ?? { label: cat.toUpperCase(), emoji: '🍽️', description: '' };
 
         return (
           <div key={cat}>

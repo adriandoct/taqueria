@@ -129,71 +129,33 @@ CREATE POLICY "Public can update pedidos status"
   USING (TRUE);
 
 -- ============================================================
--- SEED DATA — Menú
+-- SEED DATA — Menú Real Taquería Jefe de Jefes
 -- ============================================================
 INSERT INTO public.menu_tacos (nombre, descripcion, precio, imagen_url, disponible, categoria) VALUES
-(
-  'Al Pastor',
-  'Cerdo marinado en adobo rojo con piña caramelizada, cebolla morada y cilantro fresco. El clásico de la Ciudad de México.',
-  22.00,
-  '/tacos/pastor.png',
-  TRUE,
-  'cerdo'
-),
-(
-  'Suadero',
-  'Res cocida a fuego lento hasta lograr una textura melosa y dorada. Servido con cebolla blanca, cilantro y salsa verde.',
-  24.00,
-  '/tacos/asada.png',
-  TRUE,
-  'res'
-),
-(
-  'Birria',
-  'Res estofada en caldillo de chile guajillo y especias, con queso Oaxaca fundido y consomé para sumergir. Irresistible.',
-  32.00,
-  '/tacos/birria.png',
-  TRUE,
-  'res'
-),
-(
-  'Carne Asada',
-  'Arrachera de res a las brasas con guacamole casero, pico de gallo fresco y jugo de limón. Sabor a leña real.',
-  28.00,
-  '/tacos/asada.png',
-  TRUE,
-  'res'
-),
-(
-  'Carnitas',
-  'Cerdo confitado en manteca hasta quedar crujiente por fuera y jugoso por dentro. Con pico de gallo y aguacate.',
-  25.00,
-  '/tacos/carnitas.png',
-  TRUE,
-  'cerdo'
-),
-(
-  'Tripa',
-  'Tripa de res a la plancha, bien dorada y crujiente. Un taco de carácter para los conocedores.',
-  20.00,
-  '/tacos/tripa.png',
-  TRUE,
-  'res'
-),
-(
-  'Campechano',
-  'La mezcla perfecta: longaniza y suadero juntos en una tortilla. Con cebolla, cilantro y las dos salsas.',
-  26.00,
-  '/tacos/campechano.png',
-  TRUE,
-  'mixto'
-),
-(
-  'Chorizo',
-  'Chorizo rojo mexicano desmoronado, salteado con papa en cubos y especias. Colorido, aromático e intenso.',
-  22.00,
-  '/tacos/chorizo.png',
-  TRUE,
-  'cerdo'
-)
+-- ALAMBRES
+('Alambre al Pastor', 'Pimiento · Cebolla · Tocino · Carne al pastor · Queso', 130.00, '/menu/alambre-pastor.png', TRUE, 'alambre'),
+('Alambre de Bisteck', 'Pimiento · Cebolla · Champiñones · Bisteck · Queso', 140.00, '/menu/alambre-bistec.png', TRUE, 'alambre'),
+('Alambre Hawaiano', 'Sal pastor · Piña · Tocino · Jamón · Queso', 120.00, '/menu/alambre-hawaiano.png', TRUE, 'alambre'),
+('Burra', 'Chuleta · Jamón · Tocino · Queso', 130.00, '/menu/alambre-especial.png', TRUE, 'alambre'),
+('Alambre Especial', 'Pimiento · Cebolla · Tomate · Chuleta · Carne al pastor · Tocino · Queso', 130.00, '/menu/alambre-especial.png', TRUE, 'alambre'),
+('Tlaconete', 'Carne al pastor · Tocino · Jamón · Salsa mexicana · Queso', 130.00, '/menu/alambre-pastor.png', TRUE, 'alambre'),
+('Charro', 'Chuleta · Tocino · Chorizo · Pimiento · Cebolla · Queso', 130.00, '/menu/alambre-especial.png', TRUE, 'alambre'),
+('Alambre Sencillo', 'Chuleta · Tocino · Queso · Pimiento · Cebolla', 120.00, '/menu/alambre-bistec.png', TRUE, 'alambre'),
+('Fortachón', 'Bisteck · Tocino · Chorizo · Queso', 140.00, '/menu/alambre-bistec.png', TRUE, 'alambre'),
+
+-- TACOS (Órdenes de 5)
+('Tacos de Tasajo', 'Orden de 5 tacos de tasajo. Carne de res seca y sazonada al estilo oaxaqueño.', 80.00, '/menu/tacos-orden.png', TRUE, 'taco'),
+('Tacos de Chuleta', 'Orden de 5 tacos de chuleta de cerdo asada, jugosa y bien sazonada.', 80.00, '/menu/tacos-orden.png', TRUE, 'taco'),
+('Tacos al Pastor', 'Orden de 5 tacos al pastor. Cerdo marinado en adobo con piña.', 70.00, '/menu/tacos-orden.png', TRUE, 'taco'),
+
+-- SUIZO Y SINCRONIZADA
+('Suizo', 'Suizo de carne con queso gratinado. Clásico y delicioso.', 45.00, '/menu/sincronizada.png', TRUE, 'suizo'),
+('Sincronizada', 'Tortilla de harina con jamón y queso, prensada a la perfección.', 40.00, '/menu/sincronizada.png', TRUE, 'sincronizada'),
+('Quesadilla', 'Quesadilla de maíz con queso derretido. Elige tu relleno.', 40.00, '/menu/quesadilla.png', TRUE, 'quesadilla'),
+
+-- BEBIDAS
+('Refresco Desechable', 'Refresco en botella desechable de 600 ml bien frío.', 35.00, '/menu/bebidas.png', TRUE, 'bebida'),
+('Refresco en Vidrio', 'Refresco clásico en botella de vidrio, bien frío.', 30.00, '/menu/bebidas.png', TRUE, 'bebida'),
+('Boing', 'Jugo Boing desechable de 354 ml. Natural y refrescante.', 30.00, '/menu/bebidas.png', TRUE, 'bebida')
 ON CONFLICT DO NOTHING;
+
